@@ -1,8 +1,8 @@
 import { html, slotted } from "@microsoft/fast-element";
 import type { ViewTemplate } from "@microsoft/fast-element";
-import { Listbox } from "./listbox";
 import type { FoundationElementDefinition } from "../foundation-element";
 import type { ElementDefinitionContext } from "../design-system";
+import { Listbox } from "./listbox";
 
 /**
  * The template for the {@link @microsoft/fast-foundation#(Listbox:class)} component.
@@ -17,6 +17,7 @@ export const listboxTemplate: (
 ) => html`
     <template
         aria-activedescendant="${x => x.ariaActiveDescendant}"
+        aria-multiselectable="${x => x.ariaMultiselectable}"
         class="listbox"
         role="${x => x.role}"
         tabindex="${x => (!x.disabled ? "0" : null)}"

@@ -3,9 +3,9 @@ import { assert, expect } from "chai";
 import { fixture } from "../test-utilities/fixture";
 import { ListboxOption } from "../listbox-option/listbox-option";
 import { listboxOptionTemplate as itemTemplate } from "../listbox-option/listbox-option.template";
-import { Listbox, listboxTemplate as template } from "./index";
+import { ListboxElement, listboxTemplate as template } from "./index";
 
-const FASTListbox = Listbox.compose({
+const FASTListbox = ListboxElement.compose({
     baseName: "listbox",
     template
 })
@@ -96,6 +96,26 @@ describe("Listbox", () => {
         expect(element.selectedOptions).to.not.contain(option1);
         expect(element.selectedOptions).to.contain(option2);
         expect(element.selectedOptions).to.not.contain(option3);
+
+        await disconnect();
+    });
+
+    it("should set the `aria-multiselectable` attribute to match the `multiple` attribute", async () => {
+        const { element, connect, disconnect } = await setup();
+
+        await connect();
+
+        element.multiple = true;
+
+        await DOM.nextUpdate();
+
+        expect(element.getAttribute("aria-multiselectable")).to.equal("true");
+
+        element.multiple = false;
+
+        await DOM.nextUpdate();
+
+        expect(element.getAttribute("aria-multiselectable")).to.not.exist;
 
         await disconnect();
     });

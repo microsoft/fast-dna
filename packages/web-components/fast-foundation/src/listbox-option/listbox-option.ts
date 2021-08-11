@@ -1,8 +1,10 @@
 import { attr, observable, Observable } from "@microsoft/fast-element";
 import { isHTMLElement } from "@microsoft/fast-web-utilities";
+import { FoundationElement } from "../foundation-element";
+import type { Listbox } from "../listbox/listbox";
+import { ARIAGlobalStatesAndProperties } from "../patterns/aria-global";
 import { StartEnd } from "../patterns/start-end";
 import { applyMixins } from "../utilities/apply-mixins";
-import { FoundationElement } from "../foundation-element";
 
 /**
  * Determines if the element is a {@link (ListboxOption:class)}
@@ -31,11 +33,6 @@ export class ListboxOption extends FoundationElement {
     private _value: string;
 
     /**
-     * @internal
-     */
-    public proxy: HTMLOptionElement;
-
-    /**
      * The defaultSelected state of the option.
      * @public
      */
@@ -45,7 +42,7 @@ export class ListboxOption extends FoundationElement {
         if (!this.dirtySelected) {
             this.selected = this.defaultSelected;
 
-            if (this.proxy instanceof HTMLOptionElement) {
+            if (this.hasProxy) {
                 this.proxy.selected = this.defaultSelected;
             }
         }
@@ -58,6 +55,11 @@ export class ListboxOption extends FoundationElement {
     private dirtySelected: boolean = false;
 
     /**
+     * Track whether the value has been changed from the initial value
+     */
+    public dirtyValue: boolean = false;
+
+    /**
      * The disabled state of the option.
      * @public
      * @remarks
@@ -66,9 +68,72 @@ export class ListboxOption extends FoundationElement {
     @attr({ mode: "boolean" })
     public disabled: boolean;
     protected disabledChanged(prev, next): void {
-        if (this.proxy instanceof HTMLOptionElement) {
+        if (this.hasProxy) {
             this.proxy.disabled = this.disabled;
         }
+    }
+
+    public get form(): HTMLFormElement | null {
+        return this.proxy?.form;
+    }
+
+    private get hasProxy() {
+        return this.proxy instanceof HTMLOptionElement;
+    }
+
+    /**
+     * The initial value of the option. This value sets the `value` property
+     * only when the `value` property has not been explicitly set.
+     *
+     * @remarks
+     * HTML Attribute: value
+     */
+    @attr({ attribute: "value", mode: "fromView" })
+    public initialValue: string;
+    public initialValueChanged(previous: string, next: string): void {
+        // If the value is clean and the component is connected to the DOM
+        // then set value equal to the attribute value.
+        if (!this.dirtyValue) {
+            this.value = this.initialValue;
+            this.dirtyValue = false;
+        }
+    }
+
+    /**
+     * Returns the value or text content
+     * @public
+     */
+    public get label() {
+        return this.value ?? this.textContent ?? "";
+    }
+
+    /**
+     * @internal
+     */
+    private parentListbox: Listbox | null;
+
+    /**
+     * @internal
+     */
+    public proxy: HTMLOptionElement;
+
+    /**
+     * The checked state of the control.
+     *
+     * @public
+     */
+    @observable
+    public selected: boolean = this.defaultSelected;
+    protected selectedChanged(prev: unknown, next: boolean): void {
+        if (!this.dirtySelected) {
+            this.dirtySelected = true;
+        }
+
+        if (this.hasProxy) {
+            this.proxy.selected = next;
+        }
+
+        this.ariaSelected = String(next) as "true" | "false";
     }
 
     /**
@@ -83,59 +148,41 @@ export class ListboxOption extends FoundationElement {
     protected selectedAttributeChanged(): void {
         this.defaultSelected = this.selectedAttribute;
 
-        if (this.proxy instanceof HTMLOptionElement) {
+        if (this.hasProxy) {
             this.proxy.defaultSelected = this.defaultSelected;
         }
     }
 
     /**
-     * The checked state of the control.
+     * The checked state is used when the parent listbox is in multiple selection mode.
+     * For accessibility reasons, the checked state should not be present
+     *
+     * @internal
+     */
+    @observable
+    public checked?: boolean;
+    public checkedChanged(prev: unknown, next?: boolean): void {
+        this.ariaChecked =
+            typeof next === "boolean" ? (String(next) as "true" | "false") : undefined;
+    }
+
+    /**
+     * Returns the text content of the option.
      *
      * @public
      */
-    @observable
-    public selected: boolean = this.defaultSelected;
-    protected selectedChanged(): void {
-        if (this.$fastController.isConnected) {
-            if (!this.dirtySelected) {
-                this.dirtySelected = true;
-            }
-
-            if (this.proxy instanceof HTMLOptionElement) {
-                this.proxy.selected = this.selected;
-            }
-        }
-    }
-
-    /**
-     * Track whether the value has been changed from the initial value
-     */
-    public dirtyValue: boolean = false;
-
-    /**
-     * The initial value of the option. This value sets the `value` property
-     * only when the `value` property has not been explicitly set.
-     *
-     * @remarks
-     * HTML Attribute: value
-     */
-    @attr({ attribute: "value", mode: "fromView" })
-    protected initialValue: string;
-    public initialValueChanged(previous: string, next: string): void {
-        // If the value is clean and the component is connected to the DOM
-        // then set value equal to the attribute value.
-        if (!this.dirtyValue) {
-            this.value = this.initialValue;
-            this.dirtyValue = false;
-        }
-    }
-
-    public get label() {
-        return this.value ? this.value : this.textContent ? this.textContent : "";
-    }
-
     public get text(): string {
         return this.textContent as string;
+    }
+
+    /**
+     * The value of the option.
+     *
+     * @public
+     */
+    public get value(): string {
+        Observable.track(this, "value");
+        return this._value ?? this.text;
     }
 
     public set value(next: string) {
@@ -143,20 +190,19 @@ export class ListboxOption extends FoundationElement {
 
         this.dirtyValue = true;
 
-        if (this.proxy instanceof HTMLElement) {
+        if (this.hasProxy) {
             this.proxy.value = next;
         }
 
         Observable.notify(this, "value");
     }
 
-    public get value(): string {
-        Observable.track(this, "value");
-        return this._value ? this._value : this.text;
-    }
-
-    public get form(): HTMLFormElement | null {
-        return this.proxy ? this.proxy.form : null;
+    public connectedCallback(): void {
+        super.connectedCallback();
+        this.parentListbox = this.closest("[role=listbox]");
+        if (this.parentListbox?.getAttribute("multiple") !== null) {
+            this.checked = false;
+        }
     }
 
     public constructor(
@@ -183,19 +229,46 @@ export class ListboxOption extends FoundationElement {
         if (selected) {
             this.selected = selected;
         }
-
-        this.proxy = new Option(
-            `${this.textContent}`,
-            this.initialValue,
-            this.defaultSelected,
-            this.selected
-        );
-        this.proxy.disabled = this.disabled;
     }
 }
 
 /**
+ * Includes ARIA states and properties relating to the ARIA option role.
+ *
+ * @public
+ */
+export class DelegatesARIAListboxOption {
+    /**
+     * See {@link https://w3c.github.io/aria/#option} for more information
+     * @public
+     * @remarks
+     * HTML Attribute: `aria-checked`
+     */
+    @attr({ attribute: "aria-checked" })
+    public ariaChecked?: "true" | "false";
+
+    /**
+     * See {@link https://w3c.github.io/aria/#aria-selected} for more information
+     * @public
+     * @remarks
+     * HTML Attribute: `aria-selected`
+     */
+    @attr({ attribute: "aria-selected" })
+    public ariaSelected: "true" | "false" | undefined;
+}
+
+/**
+ * Mark internal because exporting class and interface of the same name
+ * confuses API documenter.
+ * TODO: https://github.com/microsoft/fast/issues/3317
  * @internal
  */
-export interface ListboxOption extends StartEnd {}
-applyMixins(ListboxOption, StartEnd);
+/* eslint-disable-next-line */
+export interface DelegatesARIAListboxOption extends ARIAGlobalStatesAndProperties {}
+applyMixins(DelegatesARIAListboxOption, ARIAGlobalStatesAndProperties);
+
+/**
+ * @internal
+ */
+export interface ListboxOption extends DelegatesARIAListboxOption, StartEnd {}
+applyMixins(ListboxOption, DelegatesARIAListboxOption, StartEnd);
