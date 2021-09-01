@@ -1,8 +1,24 @@
 # Change Log - @microsoft/fast-components
 
-This log was last generated on Thu, 26 Aug 2021 07:17:43 GMT and should not be manually modified.
+This log was last generated on Mon, 30 Aug 2021 22:30:39 GMT and should not be manually modified.
 
 <!-- Start content -->
+
+## 2.7.3
+
+Mon, 30 Aug 2021 22:30:39 GMT
+
+### Patches
+
+- Bump @microsoft/fast-foundation to v2.8.1 (nicholasrice@users.noreply.github.com)
+
+## 2.7.2
+
+Fri, 27 Aug 2021 14:14:26 GMT
+
+### Patches
+
+- Bump @microsoft/fast-element to v1.5.0 (nicholasrice@users.noreply.github.com)
 
 ## 2.7.1
 

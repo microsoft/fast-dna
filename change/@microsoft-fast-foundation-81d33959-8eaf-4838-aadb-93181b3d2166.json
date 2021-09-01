@@ -1,6 +1,6 @@
 {
   "type": "patch",
-  "comment": "add up/down key support to number-field",
+  "comment": "don't block all keys while focused",
   "packageName": "@microsoft/fast-foundation",
   "email": "corylaviska@microsoft.com",
   "dependentChangeType": "patch"
