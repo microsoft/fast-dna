@@ -18,7 +18,7 @@ import {
     FoundationElementDefinition,
 } from "@microsoft/fast-foundation";
 import { Direction, SystemColors } from "@microsoft/fast-web-utilities";
-import { Palette } from "../color/palette";
+import { Palette, PaletteRGB } from "../color/palette";
 import { Swatch, SwatchRGB } from "../color/swatch";
 import {
     accentFillActiveDelta,
@@ -189,6 +189,52 @@ export class DesignSystemProvider extends FoundationElement {
     })
     @designToken(fillColor)
     public fillColor: Swatch;
+
+    /**
+     * A convenience to recreate the accentPalette
+     * @remarks
+     * HTML attribute: accent-source-color
+     */
+    @attr({
+        attribute: "accent-source-color",
+        converter: swatchConverter,
+        mode: "fromView",
+    })
+    public accentSourceColor: Swatch;
+
+    /**
+     * @internal
+     */
+    private accentSourceColorChanged(prev: Swatch, next: Swatch): void {
+        if (next !== undefined && next !== null) {
+            accentPalette.setValueFor(this, PaletteRGB.from(next as SwatchRGB));
+        } else {
+            accentPalette.deleteValueFor(this);
+        }
+    }
+
+    /**
+     * A convenience to recreate the neutralPalette
+     * @remarks
+     * HTML attribute: neutral-source-color
+     */
+    @attr({
+        attribute: "neutral-source-color",
+        converter: swatchConverter,
+        mode: "fromView",
+    })
+    public neutralSourceColor: Swatch;
+
+    /**
+     * @internal
+     */
+    private neutralSourceColorChanged(prev: Swatch, next: Swatch): void {
+        if (next !== undefined && next !== null) {
+            neutralPalette.setValueFor(this, PaletteRGB.create(next as SwatchRGB));
+        } else {
+            neutralPalette.deleteValueFor(this);
+        }
+    }
 
     /**
      * Defines the palette that all neutral color recipes are derived from.

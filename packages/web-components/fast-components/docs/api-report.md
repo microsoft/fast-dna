@@ -332,6 +332,7 @@ export class DesignSystemProvider extends FoundationElement {
     accentForegroundHoverDelta: number;
     accentForegroundRestDelta: number;
     accentPalette: Palette;
+    accentSourceColor: Swatch;
     baseHeightMultiplier: number;
     baseHorizontalSpacingMultiplier: number;
     baseLayerLuminance: number;
@@ -359,6 +360,7 @@ export class DesignSystemProvider extends FoundationElement {
     neutralFillStrongFocusDelta: number;
     neutralFillStrongHoverDelta: number;
     neutralPalette: Palette;
+    neutralSourceColor: Swatch;
     neutralStrokeActiveDelta: number;
     neutralStrokeDividerRestDelta: number;
     neutralStrokeFocusDelta: number;
