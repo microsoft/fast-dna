@@ -32,6 +32,9 @@ export const sliderTemplate: (
         <div part="positioning-region" class="positioning-region">
             <div ${ref("track")} part="track-container" class="track">
                 <slot name="track"></slot>
+                <div part="track-start" class="track-start" style="${x => x.position}">
+                    <slot name="track-start"></slot>
+                </div>
             </div>
             <slot></slot>
             <div
