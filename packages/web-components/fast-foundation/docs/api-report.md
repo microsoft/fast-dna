@@ -277,6 +277,59 @@ export type ButtonOptions = FoundationElementDefinition & StartEndOptions;
 export const buttonTemplate: (context: ElementDefinitionContext, definition: ButtonOptions) => ViewTemplate<Button>;
 
 // @public
+export class Calendar extends FoundationElement {
+    dateFormatter: DateFormatter;
+    dateInString(date: Date | string, datesString: string): boolean;
+    dayFormat: DayFormat;
+    disabledDates: string;
+    getDayClassNames(date: CalendarDateInfo, todayString?: string): string;
+    getDays(info?: CalendarInfo, minWeeks?: number): CalendarDateInfo[][];
+    getMonthInfo(month?: number, year?: number): CalendarInfo;
+    getWeekdayText(): any[];
+    handleDateSelect(event: Event, day: CalendarDateInfo): void;
+    handleKeydown(event: KeyboardEvent, date: CalendarDateInfo): boolean;
+    locale: string;
+    minWeeks: number;
+    month: number;
+    monthFormat: MonthFormat;
+    readonly: boolean;
+    selectedDates: string;
+    weekdayFormat: WeekdayFormat;
+    year: number;
+    yearFormat: YearFormat;
+    }
+
+// @public
+export const calendarCellTemplate: (context: ElementDefinitionContext, todayString: string) => ViewTemplate<CalendarDateInfo>;
+
+// @public
+export type CalendarDateInfo = {
+    day: number;
+    month: number;
+    year: number;
+    disabled?: boolean;
+    selected?: boolean;
+};
+
+// @public
+export type CalendarInfo = MonthInfo & {
+    previous: MonthInfo;
+    next: MonthInfo;
+};
+
+// @public (undocumented)
+export const calendarRowTemplate: (context: ElementDefinitionContext, todayString: string) => ViewTemplate;
+
+// @public
+export const calendarTemplate: (context: ElementDefinitionContext, definition: FoundationElementDefinition) => ViewTemplate<Calendar>;
+
+// @public
+export const calendarTitleTemplate: ViewTemplate<Calendar>;
+
+// @public
+export const calendarWeekdayTemplate: (context: any) => ViewTemplate;
+
+// @public
 export class Card extends FoundationElement {
 }
 
@@ -623,6 +676,41 @@ export enum DataGridRowTypes {
 
 // @public
 export const dataGridTemplate: (context: any, definition: any) => ViewTemplate<DataGrid>;
+
+// @public
+export class DateFormatter {
+    constructor(config?: any);
+    date: Date;
+    dayFormat: DayFormat;
+    // (undocumented)
+    getDate(date?: {
+        day: number;
+        month: number;
+        year: number;
+    } | string | Date, format?: Intl.DateTimeFormatOptions, locale?: string): string;
+    getDateObject(date: {
+        day: number;
+        month: number;
+        year: number;
+    } | string | Date): Date;
+    // (undocumented)
+    getDay(day?: number, format?: DayFormat, locale?: string): string;
+    // (undocumented)
+    getMonth(month?: number, format?: MonthFormat, locale?: string): string;
+    // (undocumented)
+    getWeekday(weekday?: number, format?: WeekdayFormat, locale?: string): string;
+    // (undocumented)
+    getWeekdays(format?: WeekdayFormat, locale?: string): string[];
+    // (undocumented)
+    getYear(year?: number, format?: YearFormat, locale?: string): string;
+    locale: string;
+    monthFormat: MonthFormat;
+    weekdayFormat: WeekdayFormat;
+    yearFormat: YearFormat;
+}
+
+// @public
+export type DayFormat = "2-digit" | "numeric";
 
 // @public
 export class DefaultComponentPresentation implements ComponentPresentation {
@@ -1150,6 +1238,9 @@ export type Injectable<T = {}> = Constructable<T> & {
 };
 
 // @public
+export const interactiveCalendarGridTemplate: (context: ElementDefinitionContext, todayString: string) => ViewTemplate;
+
+// @public
 export interface InterfaceConfiguration {
     friendlyName?: string;
     respectConnection?: boolean;
@@ -1395,10 +1486,24 @@ export const menuItemTemplate: (context: ElementDefinitionContext, definition: M
 export const menuTemplate: (context: ElementDefinitionContext, definition: FoundationElementDefinition) => ViewTemplate<Menu>;
 
 // @public
+export type MonthFormat = "2-digit" | "long" | "narrow" | "numeric" | "short";
+
+// @public
+export type MonthInfo = {
+    month: number;
+    year: number;
+    length: number;
+    start: number;
+};
+
+// @public
 export const newInstanceForScope: (key: any) => any;
 
 // @public
 export const newInstanceOf: (key: any) => any;
+
+// @public
+export const noninteractiveCalendarTemplate: (todayString: string) => ViewTemplate;
 
 // Warning: (ae-different-release-tags) This symbol has another declaration with a different release tag
 // Warning: (ae-forgotten-export) The symbol "FormAssociatedNumberField" needs to be exported by the entry point index.d.ts
@@ -2404,7 +2509,13 @@ export function validateKey(key: any): void;
 export type VerticalPosition = "top" | "bottom" | "unset";
 
 // @public
+export type WeekdayFormat = "long" | "narrow" | "short";
+
+// @public
 export function whitespaceFilter(value: Node, index: number, array: Node[]): boolean;
+
+// @public
+export type YearFormat = "2-digit" | "numeric";
 
 
 // Warnings were encountered during analysis:
