@@ -224,3 +224,35 @@ jobs:
       timeout-minutes: 2
       env:
         PLAYWRIGHT_BROWSER: webkit
+
+
+
+  lighthouse-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - run: mkdir /tmp/artifacts
+      - name: Run Lighthouse for Mobile
+        uses: foo-software/lighthouse-check-action@master
+        with:
+          accessToken: ${{ secrets.GITHUB_TOKEN }}
+          author: ${{ github.actor }}
+          branch: ${{ github.ref }}
+          outputDirectory: /tmp/artifacts
+          emulatedFormFactor: "Mobile"
+          urls: "https://www.fast.design/"
+
+      - name: Run Lighthouse for Desktop
+        uses: foo-software/lighthouse-check-action@master
+        with:
+          accessToken: ${{ secrets.GITHUB_TOKEN }}
+          author: ${{ github.actor }}
+          branch: ${{ github.ref }}
+          outputDirectory: /tmp/artifacts
+          emulatedFormFactor: "Desktop"
+          urls: "https://www.fast.design/"
+      - name: Upload artifacts
+        uses: actions/upload-artifact@master
+        with:
+          name: Lighthouse reports
+          path: /tmp/artifacts
