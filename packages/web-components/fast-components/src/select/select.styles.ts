@@ -34,6 +34,7 @@ import {
 } from "../design-tokens";
 import { elevation } from "../styles/elevation";
 import { heightNumber } from "../styles/size";
+import { listboxMaxHeight } from "./index";
 
 export const selectStyles: (
     context: ElementDefinitionContext,
@@ -65,7 +66,7 @@ export const selectStyles: (
         display: inline-flex;
         flex-direction: column;
         left: 0;
-        max-height: calc(var(--max-height) - (${heightNumber} * 1px));
+        max-height: calc((${listboxMaxHeight} * 1px) - (${heightNumber} * 1px));
         padding: calc(${designUnit} * 1px) 0;
         overflow-y: auto;
         position: absolute;
