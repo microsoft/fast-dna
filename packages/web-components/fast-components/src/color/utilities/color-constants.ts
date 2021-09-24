@@ -13,11 +13,9 @@ export const black = SwatchRGB.create(0, 0, 0);
 /**
  * @internal
  */
-export const middleGrey = SwatchRGB.create(0.5, 0.5, 0.5);
+export const middleGrey = SwatchRGB.from(parseColorHexRGB("#808080")!);
 
 /**
  * @internal
  */
-
-const base = parseColorHexRGB("#DA1A5F")!;
-export const accentBase = SwatchRGB.create(base.r, base.g, base.b);
+export const accentBase = SwatchRGB.from(parseColorHexRGB("#DA1A5F")!);
