@@ -1,0 +1,2 @@
+# /* @echo namespace */-breadcrumb
+The `/* @echo namespace */-breadcrumb` component is used as a navigational aid, allowing users to maintain awareness of their locations within a program, an app, or a website.
