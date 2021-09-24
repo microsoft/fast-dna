@@ -1,30 +1,17 @@
-import type { SyntheticViewTemplate } from "@microsoft/fast-element";
 import {
     attr,
     booleanConverter,
     nullableNumberConverter,
     observable,
 } from "@microsoft/fast-element";
-// TODO: the Resize Observer related files are a temporary stopgap measure until
-// Resize Observer types are pulled into TypeScript, which seems imminent
-// At that point these files should be deleted.
-// https://github.com/microsoft/TypeScript/issues/37861
-import type {
-    ConstructibleResizeObserver,
-    ResizeObserverClassDefinition,
-} from "../anchored-region/resize-observer";
+import type { SyntheticViewTemplate } from "@microsoft/fast-element";
+import { FoundationElement } from "../foundation-element";
 import type {
     FoundationElementDefinition,
     FoundationElementTemplate,
 } from "../foundation-element";
-import { FoundationElement } from "../foundation-element";
-import type { StartEndOptions } from "../patterns";
-
-declare global {
-    interface WindowWithResizeObserver extends Window {
-        ResizeObserver: ConstructibleResizeObserver;
-    }
-}
+import type { StartEndOptions } from "../patterns/start-end";
+import type { ResizeObserverClassDefinition } from "../utilities/resize-observer";
 
 /**
  * The views types for a horizontal-scroll {@link @microsoft/fast-foundation#(HorizontalScroll:class)}
@@ -86,7 +73,7 @@ export class HorizontalScroll extends FoundationElement {
     /**
      * @internal
      */
-    private framesPerSecond: number = 120;
+    private framesPerSecond: number = 60;
 
     /**
      * The calculated duration for a frame.
@@ -193,6 +180,7 @@ export class HorizontalScroll extends FoundationElement {
         super.connectedCallback();
 
         this.initializeResizeDetector();
+        this.getRefreshRate();
     }
 
     public disconnectedCallback(): void {
@@ -242,17 +230,20 @@ export class HorizontalScroll extends FoundationElement {
      */
     private updateScrollStops(): void {
         this.updatingItems = true;
-        let updatedItems: HTMLElement[] = [];
+        const updatedItems: HTMLElement[] = this.scrollItems.reduce(
+            (scrollItems, scrollItem) => {
+                if (scrollItem instanceof HTMLSlotElement) {
+                    return scrollItems.concat(
+                        scrollItem.assignedElements() as HTMLElement[]
+                    );
+                }
 
-        this.scrollItems.forEach(item => {
-            if (item instanceof HTMLSlotElement) {
-                updatedItems = updatedItems.concat(
-                    item.assignedElements() as HTMLElement[]
-                );
-            } else {
-                updatedItems.push(item);
-            }
-        });
+                scrollItems.push(scrollItem);
+
+                return scrollItems;
+            },
+            [] as HTMLElement[]
+        );
 
         this.scrollItems = updatedItems;
         this.updatingItems = false;
@@ -309,14 +300,14 @@ export class HorizontalScroll extends FoundationElement {
      */
     private setFlippers(): void {
         const position: number = this.scrollContainer.scrollLeft;
-        if (this.previousFlipperContainer) {
-            this.previousFlipperContainer.classList.toggle("disabled", position === 0);
-        }
-        if (this.nextFlipperContainer && this.scrollStops) {
+        this.previousFlipperContainer?.classList.toggle("disabled", position === 0);
+
+        if (this.scrollStops) {
             const lastStop: number = Math.abs(
                 this.scrollStops[this.scrollStops.length - 1]
             );
-            this.nextFlipperContainer.classList.toggle(
+
+            this.nextFlipperContainer?.classList.toggle(
                 "disabled",
                 Math.abs(position) + this.width >= lastStop
             );
@@ -346,6 +337,8 @@ export class HorizontalScroll extends FoundationElement {
      * @public
      */
     public scrollToPrevious(): void {
+        this.getRefreshRate();
+
         const scrollPosition: number = this.scrollContainer.scrollLeft;
         const current = this.scrollStops.findIndex(
             (stop, index) =>
@@ -371,6 +364,8 @@ export class HorizontalScroll extends FoundationElement {
      * @public
      */
     public scrollToNext(): void {
+        this.getRefreshRate();
+
         const scrollPosition: number = this.scrollContainer.scrollLeft;
         const current = this.scrollStops.findIndex(
             stop => Math.abs(stop) >= Math.abs(scrollPosition)
@@ -414,8 +409,8 @@ export class HorizontalScroll extends FoundationElement {
         const steps: number[] = [];
         const direction: number = position < newPosition ? 1 : -1;
         const scrollDistance: number = Math.abs(newPosition - position);
-        const seconds: number = scrollDistance / this.speed;
-        const stepCount: number = Math.floor(this.framesPerSecond * seconds);
+        const seconds = ~~((scrollDistance / this.speed) * 1000) / 1000;
+        const stepCount: number = ~~(this.framesPerSecond * seconds);
 
         if (stepCount < 1) {
             this.scrolling = false;
@@ -433,6 +428,57 @@ export class HorizontalScroll extends FoundationElement {
 
         this.move(steps, this.frameTime);
     }
+
+    /**
+     * Holds the collection of timestamp values from requestAnimationFrame calls
+     *
+     * @internal
+     */
+    private timestamps: number[] = [];
+
+    /**
+     * Holds the set of potential frametimes.
+     *
+     * @internal
+     */
+    private frameTimes: Set<number> = new Set();
+
+    /**
+     * Calculates the screen refresh rate.
+     *
+     * @param time - the animation frame timestamp
+     *
+     * @internal
+     * @remarks
+     * Some browsers may reduce time precision to resist fingerprinting (https://developer.mozilla.org/en-US/docs/Web/API/DOMHighResTimeStamp#reduced_time_precision)
+     */
+    private getRefreshRate: (time?: number) => void = time => {
+        if (!time) {
+            requestAnimationFrame(this.getRefreshRate);
+            return;
+        }
+
+        this.timestamps.unshift(time);
+
+        if (this.timestamps.length > 10) {
+            const lastTimestamp = this.timestamps.pop()!;
+
+            // Math.round accounts for uneven refresh rates like 59.94hz
+            const potentialFrameTime = Math.round(
+                (1000 / (time - lastTimestamp)) * this.timestamps.length
+            );
+
+            if (this.frameTimes.has(potentialFrameTime)) {
+                this.framesPerSecond = potentialFrameTime;
+                this.frameTimes.clear();
+                this.timestamps = [];
+                return;
+            }
+            this.frameTimes.add(potentialFrameTime);
+        }
+
+        requestAnimationFrame(this.getRefreshRate);
+    };
 
     /**
      * Holds the timestamp of the current animation frame.
@@ -500,9 +546,7 @@ export class HorizontalScroll extends FoundationElement {
      * @internal
      */
     private getEasedFactor(easing: ScrollEasing, progress: number): number {
-        if (progress > 1) {
-            progress = 1;
-        }
+        progress = progress > 1 ? 1 : progress;
         switch (easing) {
             case "ease-in":
                 return Math.pow(progress, 1.675);
